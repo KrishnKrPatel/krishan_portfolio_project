@@ -1,0 +1,49 @@
+# Python
+*.pyc
+*.pyo
+__pycache__/
+
+# Django
+*.log
+*.pot
+*.py[cod]
+db.sqlite3
+media/
+staticfiles/
+
+# Environment files
+.env
+*.env
+
+# IDEs and editors
+.vscode/
+.idea/
+*.swp
+
+# Virtual environment
+venv/
+.env/
+
+# Docker
+docker-compose.override.yml
+
+# Backup and temp files
+*~
+*.bak
+*.swp
+
+
+*.cover
+*.hypothesis/
+nosetests.xml
+test_*.xml
+*.tox/
+*.nox/
+*.coverage
+
+# MySQL or Postgres
+*.sql
+*.sqlite3
+
+# Miscellaneous
+*.orig

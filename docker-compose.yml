@@ -1,0 +1,30 @@
+version: "3.8"
+services:
+  db:
+    image: postgres:17
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_USER: krishan
+      POSTGRES_PASSWORD: Pass1234
+      POSTGRES_DB: portfolio_data
+    ports:
+      - "5433:5432"
+
+  web:
+    build: .
+    command: ["python", "manage.py", "runserver", "0.0.0.0:8000"]
+    volumes:
+      - .:/app
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+    environment:
+      - DATABASE_URL=postgres://krishan:Pass1234@db:5432/employee_manager
+    networks:
+      - default
+
+volumes:
+  postgres_data:
+
