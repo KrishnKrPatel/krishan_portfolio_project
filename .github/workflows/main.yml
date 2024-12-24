@@ -1,0 +1,85 @@
+name: Django CI/CD
+
+on:
+  pull_request:
+    branches:
+      - main  # Run workflow on pull requests targeting the main branch
+  push:
+    branches:
+      - main  # Run workflow on pushes to the main branch
+
+jobs:
+  test:
+    name: Run Tests with Docker Compose
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: krishan
+          POSTGRES_PASSWORD: Pass1234
+          POSTGRES_DB: portfolio_data
+        ports:
+          - 5433:5432
+        options: >-
+          --health-cmd "pg_isready -U krishan -d portfolio_data"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 3
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.11
+
+      - name: Install Docker Compose
+        run: |
+          sudo apt-get update
+          sudo apt-get install docker-compose -y
+
+      - name: Start Docker Compose services
+        run: docker-compose up -d --build
+
+      - name: Wait for PostgreSQL to be ready
+        run: |
+          echo "Waiting for PostgreSQL to be ready..."
+          for i in {1..10}; do
+            docker-compose exec db pg_isready -U krishan -d portfolio_data && break
+            echo "PostgreSQL not ready. Retrying in 5 seconds..."
+            sleep 5
+          done
+
+      - name: Run Migrations
+        run: docker-compose exec web python manage.py migrate
+
+      - name: Run Tests
+        run: docker-compose exec web python manage.py test
+
+  deploy:
+    name: Deploy to Production
+    needs: test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Deploy to Server
+        uses: appleboy/ssh-action@v0.1.9
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_KEY }}
+          script: |
+            cd /path/to/your/app
+            docker-compose pull
+            docker-compose down
+            docker-compose up -d --build
+            docker-compose exec web python manage.py migrate
+            docker-compose exec web python manage.py collectstatic --noinput
